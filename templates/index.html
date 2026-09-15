@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TPO Market Workbench</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="rail" aria-label="Primary navigation">
+      <div class="brand-mark">T</div>
+      <nav>
+        <a class="rail-link active" href="#workbench" aria-label="TPO Workbench"><span>◈</span><small>Profile</small></a>
+        <a class="rail-link" href="#sessions" aria-label="Sessions"><span>⌁</span><small>Sessions</small></a>
+        <a class="rail-link" href="#notes" aria-label="Notes"><span>□</span><small>Notes</small></a>
+      </nav>
+      <div class="rail-footer">RTH<br><strong>US</strong></div>
+    </aside>
+
+    <main class="workspace" id="workbench">
+      <header class="topbar">
+        <div>
+          <p class="kicker" id="marketKicker">Market structure / US equities</p>
+          <h1>TPO Workbench</h1>
+        </div>
+        <div class="status-line"><span class="status-dot"></span><span id="sourceLabel">Connecting to tape</span><span class="status-divider"></span><span id="updatedLabel">--</span></div>
+      </header>
+
+      <section class="command-strip" aria-label="Market controls">
+        <form id="analyzeForm" class="ticker-form">
+          <label for="market">Market</label>
+          <select id="market"><option value="us" selected>US equities</option><option value="crypto">Crypto</option></select>
+          <label for="ticker">Symbol</label>
+          <input id="ticker" name="ticker" value="AAPL" maxlength="12" autocomplete="off" />
+          <button type="submit" class="primary-button" id="analyzeButton">Analyze</button>
+        </form>
+        <div class="control-group">
+          <label for="days">Lookback</label>
+          <select id="days"><option value="3">3 sessions</option><option value="5" selected>5 sessions</option><option value="10">10 sessions</option></select>
+        </div>
+        <div class="control-group">
+          <label for="tickSize">Tick size</label>
+          <select id="tickSize"><option value="0.25">0.25</option><option value="0.5" selected>0.50</option><option value="1">1.00</option></select>
+        </div>
+        <p class="control-note">30 min TPO blocks · VWAP / CVD confluence</p>
+      </section>
+
+      <section class="hero-read" id="sessions">
+        <div class="instrument">
+          <span class="ticker-badge" id="tickerBadge">AAPL</span>
+          <div><h2 id="instrumentName">Apple Inc.</h2><p id="venueLine">NYSE / Regular trading hours</p></div>
+        </div>
+        <div class="readout"><span class="readout-label">Last price</span><strong id="currentPrice">--</strong><span class="change positive" id="changeValue">--</span></div>
+        <div class="readout posture"><span class="readout-label">Market posture</span><strong id="postureValue">--</strong><span id="postureDetail">Loading profile interpretation</span></div>
+      </section>
+
+      <section class="analysis-grid">
+        <article class="profile-panel panel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Price acceptance</p><h3>Market profile</h3></div>
+            <div class="legend"><span><i class="legend-swatch poc"></i> POC</span><span><i class="legend-swatch value"></i> Value area</span><span><i class="legend-swatch ib"></i> IB</span></div>
+          </div>
+          <div class="profile-wrap" id="profileChart" role="img" aria-label="TPO market profile chart"></div>
+          <div class="profile-foot"><span id="profileSummary">-- price levels · -- TPO prints</span><span class="muted">Letters represent 30-minute periods</span></div>
+        </article>
+
+        <aside class="levels-panel panel">
+          <div class="panel-heading"><div><p class="eyebrow">Reference levels</p><h3>Decision map</h3></div><span class="tiny-tag">RTH</span></div>
+          <div class="level-list">
+            <div class="level-row poc-row"><span><i class="level-dot poc"></i>Point of control</span><strong id="pocValue">--</strong></div>
+            <div class="level-row"><span><i class="level-dot vah"></i>Value area high</span><strong id="vahValue">--</strong></div>
+            <div class="level-row"><span><i class="level-dot val"></i>Value area low</span><strong id="valValue">--</strong></div>
+            <div class="level-row"><span><i class="level-dot ib"></i>Initial balance high</span><strong id="ibHighValue">--</strong></div>
+            <div class="level-row"><span><i class="level-dot ib"></i>Initial balance low</span><strong id="ibLowValue">--</strong></div>
+          </div>
+          <div class="thesis-box"><span class="eyebrow">Reading the tape</span><p id="thesisText">--</p></div>
+        </aside>
+      </section>
+
+      <section class="flow-grid">
+        <article class="flow-panel panel">
+          <div class="panel-heading"><div><p class="eyebrow">Volume-weighted context</p><h3>VWAP / CVD signal</h3></div><span class="tiny-tag" id="indicatorMode">--</span></div>
+          <div class="indicator-readouts">
+            <div><span class="readout-label">VWAP</span><strong id="vwapValue">--</strong></div>
+            <div><span class="readout-label">CVD</span><strong id="cvdValue">--</strong></div>
+            <div><span class="readout-label">Delta</span><strong id="cvdChange">--</strong></div>
+          </div>
+          <div class="signal-box" id="signalBox"><span class="signal-bullet"></span><div><strong id="signalValue">--</strong><p id="signalDetail">Waiting for indicator data</p></div></div>
+          <div class="signal-combinations">
+            <p class="eyebrow">3.2 交易信号如何组合</p>
+            <ul>
+              <li>价格在 VWAP 上方且 CVD 上升：偏向多头环境，但仍需确认成交量和结构是否支持。</li>
+              <li>价格在 VWAP 下方且 CVD 下降：偏向空头环境，反弹回 VWAP 后受阻可能提供趋势延续线索。</li>
+              <li>价格远离 VWAP 并触及偏离带：关注是否出现动能衰竭，而不是直接逆势开仓。</li>
+              <li>价格反复穿越 VWAP：通常说明市场处于平衡或震荡状态，趋势策略的信号质量可能下降。</li>
+            </ul>
+          </div>
+          <div class="indicator-chart" id="indicatorChart" role="img" aria-label="VWAP and cumulative volume delta chart"></div>
+        </article>
+        <aside class="flow-notes panel">
+          <p class="eyebrow">Confluence lens</p>
+          <h3>Read price with pressure</h3>
+          <p>VWAP locates the market's volume-weighted cost. CVD shows whether aggressive buying or selling is doing the work.</p>
+          <div class="signal-rule"><span class="rule-dot bullish"></span><span>Above VWAP + rising CVD</span><b>supportive</b></div>
+          <div class="signal-rule"><span class="rule-dot bearish"></span><span>Below VWAP + falling CVD</span><b>weak</b></div>
+          <div class="signal-rule"><span class="rule-dot mixed"></span><span>Price / CVD disagree</span><b>wait</b></div>
+        </aside>
+      </section>
+
+      <section class="bottom-grid" id="notes">
+        <article class="sessions-panel panel">
+          <div class="panel-heading"><div><p class="eyebrow">Context over time</p><h3>Session rotation</h3></div><span class="tiny-tag" id="sessionCount">-- sessions</span></div>
+          <div class="session-table-wrap"><table><thead><tr><th>Session</th><th>High</th><th>Low</th><th>Close</th><th>Volume</th></tr></thead><tbody id="sessionRows"></tbody></table></div>
+        </article>
+        <article class="method-panel panel">
+          <p class="eyebrow">Market field notes</p>
+          <h3>How to read this tape</h3>
+          <div class="method-copy"><p><b>Acceptance</b> is where the letters stack. That is the market spending time and building value.</p><p><b>Rejection</b> is a thin edge or single-print tail. It shows price moving through without agreement.</p><p><b>Expansion</b> begins when price holds outside value. Confirm the retest before calling a new trend.</p></div>
+          <div class="method-rule"><span>TPO + VWAP + CVD</span><span>Data may be delayed</span></div>
+        </article>
+      </section>
+      <footer class="footer-note">TPO is a framework for context, not a standalone signal. Data may be delayed.</footer>
+    </main>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
