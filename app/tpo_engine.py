@@ -72,29 +72,41 @@ def generate_crypto_demo_bars(ticker: str, sessions: int = 5) -> list[Bar]:
     return bars
 
 
-def _parse_yahoo_bars(ticker: str, days: int = 5) -> list[Bar] | None:
-    try:
-        from urllib.parse import urlencode
-        from urllib.request import Request, urlopen
-        import json
+def _parse_yahoo_bars(ticker: str, days: int = 5) -> tuple[list[Bar] | None, str | None]:
+    from urllib.parse import urlencode
+    from urllib.request import Request, urlopen
+    import json
 
-        params = urlencode({"range": f"{max(days, 1)}d", "interval": "30m", "includePrePost": "false", "events": "div,splits"})
-        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker.upper()}?{params}"
-        request = Request(url, headers={"User-Agent": "tpo-market-workbench/0.1"})
-        with urlopen(request, timeout=8) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-        result = payload["chart"]["result"][0]
-        timestamps = result.get("timestamp", [])
-        quote = result["indicators"]["quote"][0]
-        bars: list[Bar] = []
-        for index, timestamp in enumerate(timestamps):
-            values = [quote[key][index] for key in ("open", "high", "low", "close", "volume")]
-            if any(value is None for value in values):
+    params = urlencode({"range": f"{max(days, 1)}d", "interval": "30m", "includePrePost": "false", "events": "div,splits"})
+    last_error = "unknown Yahoo response"
+    for host in ("query1.finance.yahoo.com", "query2.finance.yahoo.com"):
+        try:
+            url = f"https://{host}/v8/finance/chart/{ticker.upper()}?{params}"
+            request = Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; TPO-Market-Workbench/0.1)", "Accept": "application/json"})
+            with urlopen(request, timeout=15) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            chart = payload.get("chart", {})
+            if chart.get("error"):
+                last_error = chart["error"].get("description", "Yahoo chart error")
                 continue
-            bars.append(Bar(datetime.fromtimestamp(timestamp, tz=timezone.utc), *values))
-        return bars or None
-    except Exception:
-        return None
+            result = (chart.get("result") or [None])[0]
+            if not result:
+                last_error = "Yahoo returned no chart result"
+                continue
+            timestamps = result.get("timestamp", [])
+            quote = result.get("indicators", {}).get("quote", [{}])[0]
+            bars: list[Bar] = []
+            for index, timestamp in enumerate(timestamps):
+                values = [quote.get(key, [None] * len(timestamps))[index] for key in ("open", "high", "low", "close", "volume")]
+                if any(value is None for value in values):
+                    continue
+                bars.append(Bar(datetime.fromtimestamp(timestamp, tz=timezone.utc), *values))
+            if bars:
+                return bars, None
+            last_error = "Yahoo returned no usable bars"
+        except Exception as error:
+            last_error = f"{type(error).__name__}: {error}"
+    return None, last_error
 
 
 def _parse_binance_bars(ticker: str, days: int = 5) -> tuple[list[Bar], list[float]] | None:
@@ -125,10 +137,10 @@ def load_bars(ticker: str, days: int = 5, market: str = "us") -> tuple[list[Bar]
         if live_bars:
             return live_bars, "Binance spot 1h klines"
         return generate_crypto_demo_bars(ticker, days), "Synthetic crypto demo tape (Binance unavailable)"
-    live_bars = _parse_yahoo_bars(ticker, days)
+    live_bars, yahoo_error = _parse_yahoo_bars(ticker, days)
     if live_bars:
         return live_bars, "Yahoo Finance delayed data"
-    return generate_demo_bars(ticker, days), "Synthetic demo tape (Yahoo unavailable)"
+    return generate_demo_bars(ticker, days), f"Synthetic demo tape (Yahoo unavailable: {yahoo_error})"
 
 
 def _session_label(timestamp: datetime) -> str:
